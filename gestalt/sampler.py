@@ -1,22 +1,30 @@
-"""Random sampler for stimuli.
+"""Random samplers for visual stimuli.
 """
 
+from typing import Callable, Iterator, NewType, Sequence
 import numpy as np
 from scipy import stats
 
-def draw_positions(radius:float, sampler, *,
+Point = np.ndarray | Sequence[float]
+# Point = tuple[float, float]
+# Point = NewType('Point', np.ndarray|tuple[float...])
+
+def draw_positions(radius:float, sampler:Iterator[Point], *,
              exclusions:np.ndarray=np.empty((0,2)),
             #  fmax:float=np.inf,
-             thresh:float=1e-3):
+             thresh:float=1e-3) -> Sequence[Point]:
     """Draw random positions of balls.
 
-    Args
-    ----
-    radius: of balls
-    sampler: a generator of infinite length
-    exclusion: a set of coordinates to be excluded
-    thresh
+    Args:
+        radius: radius of balls
+        sampler: a generator yielding random points
+        exclusions: a set of coordinates to be excluded
+        thresh: threshold for sampling efficiency
+
+    Returns:
+        an array of points
     """
+    # initiation
     X = np.empty((0,2))
     niter = 0
 
@@ -27,33 +35,50 @@ def draw_positions(radius:float, sampler, *,
             continue
 
         niter += 1
+        # distance of the candidate point to existing points
         dist = np.linalg.norm(x-X, axis=-1)
         idx = np.where(2*radius<=dist)[0]
 
         # The candidate ball must not touch more than one existing ball,
-        # and must be close to at least on existing ball.
-        # if len(idx)>=len(X)-1 and (dist.size==0 or np.min(dist)<=(2+fmax)*radius):
         if len(idx)>=len(X)-1:
+        # and must be close to at least on existing ball?
+        # if len(idx)>=len(X)-1 and (dist.size==0 or np.min(dist)<=(2+fmax)*radius):
             X = np.vstack([X[idx],x])
 
-        # exit if have generated enough points and current sampling is efficient
+        # exit if the current sampling becomes inefficient
         if len(X)/niter <thresh:
             break
 
     return X
 
 
-def polygone(P:list, α:float=1.):
+def polygone(P:list[tuple], alpha:float=1.) -> Iterator[Point]:
     """Draw random samples in a polygone area.
+
+    Args:
+        P: list of points defining the polygone
+        alpha: hyper-parameter of a Dirichlet distribution
+
+    Yields:
+        a random point inside the polygone.
     """
-    d = stats.dirichlet(np.ones(len(P))*α)  # symmetric Dirichlet distribution
+    # symmetric Dirichlet distribution
+    d = stats.dirichlet(np.ones(len(P))*alpha)
     while True:
+        # draw a random sample
         t = d.rvs()
         yield np.sum(t[:,None]*P, axis=0)
 
 
-def box(pos:tuple=(0,0), size:tuple=(1,1)):
+def box(pos:tuple=(0,0), size:tuple=(1,1)) -> Iterator[Point]:
     """Draw random samples in a box area.
+
+    Args:
+        pos: lower-left corner of the box.
+        size: width and height of the box.
+
+    Yields:
+        a random point inside the box.
     """
     while True:
         yield np.random.rand(2)*size + pos
@@ -69,15 +94,26 @@ def box(pos:tuple=(0,0), size:tuple=(1,1)):
 #         yield (1-t)*p1 + t*p2
 
 
-def segments(P:list):
-    #     p1:tuple=(0.25,0.25), p2:tuple=(0.75,0.25), p3:tuple=(0.5,0.683)
+def segments(P:list) -> Iterator[Point]:
+    """Draw random samples on line segments.
+
+    Args:
+        P: list of segments' end points
+
+    Yields:
+        a random point on the line segments
+    """
+    # Note that a triangle can be defined as follows:
+    # p1:tuple=(0.25,0.25), p2:tuple=(0.75,0.25), p3:tuple=(0.5,0.683), p4=p1
     while True:
+        # first draw a random segment from the given ones
         i = np.random.randint(len(P)-1)
+        # next draw a random point on that segment
         t = np.random.rand()
         yield (1-t)*P[i] + t*P[i+1]
 
 
-def circle(pos:tuple=(0.5,0.5), radius:float=0.25, *, inside:bool=True):
+def circle(pos:tuple=(0.5,0.5), radius:float=0.25, *, inside:bool=True) -> Iterator[Point]:
     """Draw random samples in/on a circle.
     """
     while True:
@@ -88,8 +124,12 @@ def circle(pos:tuple=(0.5,0.5), radius:float=0.25, *, inside:bool=True):
         yield p*r+pos
 
 
-def point_set(xs:np.ndarray, pert:float=0):
+def point_set(xs:Sequence[Point], pert:float=0) -> Iterator[Point]:
     """Draw random samples from a given set.
+
+    Args:
+        xs: a set of points
+        pert: perturbation of the random sample
     """
     N = len(xs)
     while True:
@@ -102,7 +142,9 @@ def point_set(xs:np.ndarray, pert:float=0):
 
 
 # Not tested
-def curve(xs:np.ndarray, gs:np.ndarray=None, *, step:float=0, axis:int=0, radius:float=0):
+def curve(xs:np.ndarray, gs:np.ndarray=None, *, step:float=0, axis:int=0, radius:float=0) -> Iterator[Point]:
+    """Conditional sampling on a curve.
+    """
     while True:
         try:
             dist = np.linalg.norm(x0-xs, axis=-1)

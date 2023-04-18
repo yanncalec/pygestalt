@@ -8,17 +8,15 @@ def contour_from_cartoon(X0:np.ndarray, s:float=0.5, **kwargs):
     - row (first dimension) as x axis
     - origin is at upper-left corner
 
-    Args
-    ----
-    X0: 2d input image
-    s: padding factor
-    keyword args: for the method `np.pad()`
+    Args:
+        X0: 2d input image
+        s: padding factor
+        keyword args: for the method `np.pad()`
 
-    Returns
-    -------
-    - padded image
-    - position of contours in the padded image
-    - finite difference at contour points
+    Returns:
+        a padded image
+        contour coordinates in the padded image
+        finite difference at contour points
     """
 
     if s>0:
@@ -40,7 +38,7 @@ def contour_from_cartoon(X0:np.ndarray, s:float=0.5, **kwargs):
     return X, Ps, Gs
 
 
-def extend_image(X, s:float=.5):
+def extend_image(X:np.ndarray, s:float=.5):
     if s<=0.:
         return X.copy()
     else:

@@ -3,8 +3,17 @@
 
 import numpy as np
 
-def segment(X, g, l:float, w:float):
-    """Line segment.
+def segment(X:np.ndarray, g:np.ndarray, l:float, w:float) -> np.ndarray:
+    """Line segment function.
+
+    Args:
+        X: coordinates of evaluation, of dimension ?x2.
+        g: normal direction of the segment.
+        l: length of the segment.
+        w: width of the segment.
+
+    Returns:
+        function values at the given coordinates.
     """
     g = g / np.linalg.norm(g)
     h = np.asarray([-g[1], g[0]])
@@ -18,27 +27,51 @@ def segment(X, g, l:float, w:float):
 # vgabor = np.vectorize(gabor)
 
 
-def gabor(X, g, f:float, σ2:float):
+def gabor(X:np.ndarray, g:np.ndarray, f:float, σ2:float) -> np.ndarray:
     """Gabor function.
+
+    Args:
+        X: coordinates of evaluation, of dimension ?x2.
+        g: normal direction of the patch.
+        f: frequency of modulation.
+        σ2: variance.
     """
     g = g / np.linalg.norm(g)
     nX = np.linalg.norm(X, axis=-1)
     return (0 + np.exp(-(nX)/(2*σ2)) * np.cos(2*np.pi*f*X@g)) / 2
 
 
-def generate_image(P, Xs=None, Gs=None, *, N:int, ng:int=10, pfunc:callable):
+def generate_image(P, Xs:np.ndarray=None, Gs:np.ndarray=None, *, N:int, ng:int=10, pfunc:callable) -> np.ndarray:
+    """Generate a pixel image of random oriented patches located inside balls.
+
+    Args:
+        P: position of balls in [0,1]x[0,1], of shape ?x2
+        N: image resolution in pixels.
+        Xs: foreground curve points, of shape ?x2.
+        Gs: gradients at `Xs`.
+        ng: number of adjacent points for smoothing the gradient.
+        pfunc: patch function. `pfunc(z,g)` is the patch function with orientation `g` evaluated at `z` (of shape ?x2).
+
+    Returns:
+        a pixel image.
+    """
     I = np.zeros((N,N), dtype=float)
-    if (Xs is not None) and (Gs is not None):
+    # if foreground curve points and gradients are given, retrieve smoothed gradients
+    foreground = (Xs is not None) and (Gs is not None)
+    if foreground:
         dist = np.linalg.norm(P[:,:,None] - Xs.T[None,:,:], axis=1)
         idx = np.argsort(dist, axis=1)[:,:ng]
         G = np.mean(Gs[idx], axis=1)
 
+    # meshgrid on [0,1]x[0,1]
     XYg = np.stack(np.meshgrid(range(N), range(N))).reshape(2,-1).T / N
+    # relative coordinates of meshgrid points to balls
     Z = XYg[:,:,None] - P.T[None,:,:]
 
+    # iteration on balls is more efficient than that on pixels
     for n in range(Z.shape[-1]):
         z = Z[:,:,n]
-        if (Xs is not None) and (Gs is not None):
+        if foreground:
             g = G[n]; g /= np.linalg.norm(g)
         else:
             g = np.random.randn(2); g /= np.linalg.norm(g)
