@@ -2,8 +2,9 @@
 """
 
 import numpy as np
+from numpy.typing import ArrayLike
 
-def segment(X:np.ndarray, g:np.ndarray, l:float, w:float) -> np.ndarray:
+def segment(X:ArrayLike, g:ArrayLike, l:float, w:float) -> ArrayLike:
     """Line segment function.
 
     Args:
@@ -27,7 +28,7 @@ def segment(X:np.ndarray, g:np.ndarray, l:float, w:float) -> np.ndarray:
 # vgabor = np.vectorize(gabor)
 
 
-def gabor(X:np.ndarray, g:np.ndarray, f:float, σ2:float) -> np.ndarray:
+def gabor(X:ArrayLike, g:ArrayLike, f:float, σ2:float) -> ArrayLike:
     """Gabor function.
 
     Args:
@@ -41,7 +42,7 @@ def gabor(X:np.ndarray, g:np.ndarray, f:float, σ2:float) -> np.ndarray:
     return (0 + np.exp(-(nX)/(2*σ2)) * np.cos(2*np.pi*f*X@g)) / 2
 
 
-def generate_image(P, Xs:np.ndarray=None, Gs:np.ndarray=None, *, N:int, ng:int=10, pfunc:callable) -> np.ndarray:
+def generate_image(P, Xs:ArrayLike=None, Gs:ArrayLike=None, *, N:int, ng:int=10, pfunc:callable) -> ArrayLike:
     """Generate a pixel image of random oriented patches located inside balls.
 
     Args:

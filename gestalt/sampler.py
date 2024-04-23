@@ -3,14 +3,23 @@
 
 from typing import Callable, Iterator, NewType, Sequence
 import numpy as np
+from numpy.typing import ArrayLike
 from scipy import stats
 
-Point = np.ndarray | Sequence[float]
+Point = ArrayLike | Sequence[float]
 # Point = tuple[float, float]
-# Point = NewType('Point', np.ndarray|tuple[float...])
+# Point = NewType('Point', ArrayLike|tuple[float...])
+
+def distances(P, Q):
+    """Compute the distance between every pair of points from two sets.
+    """
+    assert P.ndim == Q.ndim == 2
+    assert P.shape[1] == Q.shape[1]
+
+    return np.linalg.norm(P[:,None,:]-Q[None,...], axis=-1)
 
 def draw_positions(radius:float, sampler:Iterator[Point], *,
-             exclusions:np.ndarray=np.empty((0,2)),
+             exclusions:ArrayLike=np.empty((0,2)),
             #  fmax:float=np.inf,
              thresh:float=1e-3) -> Sequence[Point]:
     """Draw random positions of balls.
@@ -29,27 +38,57 @@ def draw_positions(radius:float, sampler:Iterator[Point], *,
     niter = 0
 
     for x in sampler:
+        # draw N points
+        x = np.atleast_2d(x)
         # The candidate ball must not touch the exclusion balls
-        dist = np.linalg.norm(x-exclusions, axis=-1)
-        if not(dist.size==0 or np.min(dist) >= 2*radius):
+        dist = distances(x, exclusions)
+        # dist = np.linalg.norm(x-exclusions, axis=-1)
+        if not(dist.size == 0 or np.min(dist) >= 2*radius):
             continue
 
         niter += 1
         # distance of the candidate point to existing points
-        dist = np.linalg.norm(x-X, axis=-1)
-        idx = np.where(2*radius<=dist)[0]
+        dist = distances(x, X)
+        # dist = np.linalg.norm(x-X, axis=-1)
+        idx = np.where(np.all(2*radius < dist, axis=0))
 
-        # The candidate ball must not touch more than one existing ball,
-        if len(idx)>=len(X)-1:
-        # and must be close to at least on existing ball?
+        # The candidate ball must not touch more than N existing ball,
+        if len(idx[0])>=len(X)-len(x):
+        # and must be close to at least one existing ball?
         # if len(idx)>=len(X)-1 and (dist.size==0 or np.min(dist)<=(2+fmax)*radius):
-            X = np.vstack([X[idx],x])
+            X = np.vstack([X[idx].reshape(-1,2),x])
 
         # exit if the current sampling becomes inefficient
-        if len(X)/niter <thresh:
+        if len(X)/niter < thresh:
             break
 
     return X
+
+
+def as_multiple(N:int=1, radius:float=None):
+    """Make a sampler of single output to `N` outputs by keeping the
+    minimum distance of 2*`radius` between points.
+    """
+    def decorator(original_sampler):
+        def wrapper(*args, **kwargs):
+            iterator = original_sampler(*args, **kwargs)
+            # P = np.empty((0,2), dtype=float)
+            P = []
+            n = 0
+            for x in iterator:
+                if N > 1 and radius is not None:
+                    dist = np.linalg.norm(np.asarray(P).reshape(-1,2)-x, axis=-1)
+                    if not(dist.size==0 or np.min(dist) >= 2*radius):
+                        continue
+                P.append(x)
+                n += 1
+                if n%N==0:
+                    yield np.asarray(P)
+                    P = []
+            # if len(P)>0:
+            #     yield P
+        return wrapper
+    return decorator
 
 
 def polygone(P:list[tuple], alpha:float=1.) -> Iterator[Point]:
@@ -142,7 +181,7 @@ def point_set(xs:Sequence[Point], pert:float=0) -> Iterator[Point]:
 
 
 # Not tested
-def curve(xs:np.ndarray, gs:np.ndarray=None, *, step:float=0, axis:int=0, radius:float=0) -> Iterator[Point]:
+def curve(xs:ArrayLike, gs:ArrayLike=None, *, step:float=0, axis:int=0, radius:float=0) -> Iterator[Point]:
     """Conditional sampling on a curve.
     """
     while True:

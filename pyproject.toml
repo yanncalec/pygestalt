@@ -1,25 +1,20 @@
 [tool.poetry]
 name = "gestalt"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Python package for visual stimuli generation and detection."
-license = "MIT"
 authors = ["Han Wang <han.wang.fr@gmail.com>"]
 readme = "README.md"
-repository = "https://github.com/yanncalec/gestalt"
-documentation = ""
 
 [tool.poetry.dependencies]
-python = "~3.10"
-numpy = "^1.24.2"
-scipy = "^1.10.1"
-matplotlib = "^3.7.1"
-torch = "^2.0.0"
+python = "^3.11"
+scipy = "^1.11.4"
+numpy = "^1.26.2"
+matplotlib = "^3.8.2"
+# pygame = "^2.5.2"
 
-[tool.poetry.group.docs]
-optional = true
 
-[tool.poetry.group.docs.dependencies]
-mkdocs = "*"
+[tool.poetry.group.dev.dependencies]
+seaborn = "^0.13.0"
 
 [build-system]
 requires = ["poetry-core"]
