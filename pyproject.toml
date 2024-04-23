@@ -7,11 +7,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-scipy = "^1.11.4"
+scipy = "^1.13.0"
 numpy = "^1.26.2"
-matplotlib = "^3.8.2"
+matplotlib = "^3.8.4"
 # pygame = "^2.5.2"
-
 
 [tool.poetry.group.dev.dependencies]
 seaborn = "^0.13.0"
