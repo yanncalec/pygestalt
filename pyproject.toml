@@ -1,9 +1,12 @@
 [tool.poetry]
-name = "gestalt"
-version = "0.1.1"
+name = "pygestalt"
+version = "0.1.2"
 description = "A Python package for visual stimuli generation and detection."
 authors = ["Han Wang <han.wang.fr@gmail.com>"]
 readme = "README.md"
+packages = [
+    { include = "gestalt" },
+    ]
 
 [tool.poetry.dependencies]
 python = "^3.10"
