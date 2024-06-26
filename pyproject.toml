@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pygestalt"
-version = "0.1.4"
+version = "0.1.5"
 description = "A Python package for visual stimuli generation and detection."
 authors = ["Han Wang <han.wang.fr@gmail.com>"]
 readme = "README.md"
