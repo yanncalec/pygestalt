@@ -9,6 +9,17 @@ from matplotlib import pyplot as plt
 def angle(dx, dy):
     return np.mod(np.arctan2(dy, dx), np.pi)
 
+def add_jitter(dx, dy, jitter:float, mode:str='random'):
+    """Add jitters to given directions.
+    """
+    # assert H.ndim==2 and H.shape[1]==2, "Wrong input shape."
+    assert len(dx)==len(dy)
+    j = jitter/180*np.pi
+    if mode == 'random':
+        j *= 2*(np.random.rand(len(dx))-0.5)
+    a = angle(dx, dy) + j
+    return np.asarray([np.cos(a), np.sin(a)])
+
 
 def image_derivative(X:ArrayLike, method:str='sobel') -> tuple[ArrayLike]:
     """Compute the image derivatives and its direction.
